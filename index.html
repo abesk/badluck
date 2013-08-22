@@ -1,0 +1,233 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas" width="1600" height="650"></canvas>
+<script>
+    window.requestAnimFrame = (function (callback) {
+        return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
+                function (callback) {
+                    window.setTimeout(callback, 1000 / 100);
+                };
+    })();
+    var canvas = document.getElementById('canvas');
+    var gravity = 0.5;
+    var gravityDirection =  1;
+    var falling,next,     hatOffsetX,     hatOffsetY;
+    var hero = {
+        angle: 30,
+        speed: 0,
+        acceleration: 0,
+        scaleX: 1,
+        scaleY: 0,
+        x: 30,
+        y: 40,
+        w: 10,
+        velocityX: 0,
+        velocityY: 0,
+        moving: false,
+        jump: false,
+        fly: false
+    }
+
+    var map = [
+        "#####################################################################",
+        "#####################################################################",
+        "#                            ####                                  ##",
+        "#                             ####                                 ##",
+        "#     ########## ####            ####                              ##",
+        "##########         ############    #####                           ##",
+        "#                                                                  ##",
+        "#          ###          #############################################",
+        "###############        ##############################################",
+        "#                      #      #                                    ##",
+        "#                      #      #                                    ##",
+        "#                      #      #                                    ##",
+        "#                             #                                    ##",
+        "#                             #                                    ##",
+        "#                      #      #                                    ##",
+        "#                      #      #                                    ##",
+        "#                      #      #                                    ##",
+        "########################      ###########                          ##",
+        "#                      #      #                                    ##",
+        "#                             #                                    ##",
+        "#                      #                                           ##",
+        "#####################################################################",
+        "#####################################################################"
+
+    ];
+
+
+    document.addEventListener("keyup", function (event) {
+
+        if (event.keyCode == 37 || event.keyCode == 39) {
+            hero.moving = false;
+        }
+    });
+    document.addEventListener("keydown", function (event) {
+        //left
+        if (event.keyCode == 37) {
+            if (hero.scaleX == 1) {
+                hero.acceleration = 0;
+            }
+            hero.scaleX = -1;
+            hero.acceleration += 0.5;
+            hero.moving = true;
+        }
+        //up
+        if (event.keyCode == 38) {
+            if (!hero.jump && !hero.fly) {
+                hero.velocityY = -5 * gravityDirection;
+                hero.jump = true;
+            }
+        }
+        //right
+        if (event.keyCode == 39) {
+            if (hero.scaleX == -1) {
+                hero.acceleration = 0;
+            }
+            hero.scaleX = 1;
+            hero.acceleration += 0.5;
+            hero.moving = true;
+
+        }
+        if (event.keyCode == 32) {
+            gravityDirection *= -1;
+
+        }
+    });
+
+    var ctx = document.getElementById('canvas').getContext('2d');
+    var fly = true;
+    var correctY = null;
+    var i = 0;
+    var j=0;
+    var box;
+    var hatOffset;
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        i = Math.round(hero.x / 10);
+        j = Math.floor((hero.y) / 10);
+
+        if (hero.jump) {
+
+            falling = gravityDirection ==1?  hero.velocityY>0 :  hero.velocityY<0;
+            if (map[j+gravityDirection][i] == "#" && falling)  {
+                hero.velocityY =0;
+                hero.jump = false;
+                hero.fly = false;
+
+            }
+            else if  (map[j-gravityDirection][i] == "#" && !falling){
+                hero.velocityY = 0;
+                hero.y = j*10;
+                hero.jump = false;
+                hero.fly = false;
+
+            }
+            else {
+
+                hero.y = hero.y + hero.velocityY;
+                hero.velocityY += gravity * gravityDirection;
+            }
+        }
+        else {
+            next =  Math.ceil((hero.velocityY + gravity * gravityDirection)/10);
+            if(next == 0){
+                next = gravityDirection;
+            }
+            if (map[j+next][i] == "#") {
+                //if(hero.fly || hero.)
+                hero.fly = false;
+                hero.jump = false;
+
+                hero.y  = j * 10;
+                hero.velocityY = 0;
+
+            }
+            else {
+                hero.fly = true;
+                hero.y = hero.y + hero.velocityY;
+                hero.velocityY += gravity * gravityDirection;
+            }
+
+
+
+        }
+        if (hero.moving) {
+            hero.speed = hero.speed + hero.acceleration;
+            if (hero.speed > 2) {
+                hero.speed = 2;
+                hero.acceleration = 2;
+            }
+
+            hero.velocityX = hero.speed * hero.scaleX;
+            //hero.velocityY = hero.speed + hero.scaleY;
+        }
+        else {
+            if (!hero.jump) {
+                hero.velocityX = hero.velocityX / 1.25;
+                if (hero.velocityX * hero.velocityX < 0.01) {
+                    hero.velocityX = 0;
+                }
+            }
+
+        }
+       // hero.x = hero.x + hero.velocityX;
+
+        i = Math.round(hero.x / 10);
+
+        if(map[j][i+hero.scaleX] == "#"){
+                hero.velocityX =0;
+                hero.x = i*10;
+
+
+        }
+        hero.x =  hero.x + hero.velocityX ;
+
+
+        ctx.fillStyle = "rgb(50,50,50)";
+        for (boxI = 0; boxI < map.length; boxI++) {
+            box = map[boxI];
+            ctx.fillRect(box.x, box.y, box.w, box.h);
+        }
+        for (var y = 0; y < map.length; y++) {
+            for (var x = 0; x < map[y].length; x++) {
+                if (map[y][x] == "#") {
+                    ctx.fillRect(x * 10, y * 10, 10, 10);
+                }
+            }
+        }
+        ctx.fillStyle = "rgb(200,0,150)";
+        ctx.fillRect(hero.x, hero.y , 10, 10);
+        ctx.fillStyle = "rgb(0,0,0)";
+        hatOffsetX = 0;
+        if (hero.scaleX < 0) {
+            hatOffsetX = 5;
+        }
+        hatOffsetY = 0;
+        if(gravityDirection < 0){
+            hatOffsetY  = -7;
+        }
+
+        ctx.fillRect(hero.x - hatOffsetX, hero.y -hatOffsetY, 15, 3);
+
+
+        requestAnimFrame(function () {
+            animate();
+        });
+    }
+    animate();
+
+
+</script>
+</body>
+</html>
