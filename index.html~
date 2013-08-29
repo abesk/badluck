@@ -8,7 +8,6 @@ html, body { width:100%; height:100%; } /* just to be sure these are full screen
 
 canvas { display:block; }
     </style>
-    <script src="data.js"></script>
 </head>
 <body>
 <canvas id="canvas" width="1631" height="725"></canvas>
@@ -16,7 +15,7 @@ canvas { display:block; }
     window.requestAnimFrame = (function (callback) {
         return window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame ||
                 function (callback) {
-                    window.setTimeout(callback, 1000 / 60);
+                    window.setTimeout(callback, 1000 / 100);
                 };
     })();
     window.addEventListener('resize', resizeCanvas, false);
@@ -52,8 +51,41 @@ canvas { display:block; }
         fly: false
     }
 
-     var leftPress = false;
-     var rightPress = false;
+    var map = [
+        "#####################################################################",
+        "#####################################################################",
+        "#                            ####                                  ##",
+        "#                             ####                                 ##",
+        "#     ##########   ##            ####                              ##",
+        "##########         ############    #####                           ##",
+        "#                                                                  ##",
+        "#          ###          #############################################",
+        "###############        ##############################################",
+        "#                      #      #                                    ##",
+        "#                      #      #                                    ##",
+        "#                      #      #                                    ##",
+        "#                             #                                    ##",
+        "#                             #                                    ##",
+        "#                      #      #                                    ##",
+        "#                      #      #                                    ##",
+        "#                      #      #                                    ##",
+        "########################      ###########                          ##",
+        "#                             #                                    ##",
+        "#                             #                                    ##",
+        "#                      #                                           ##",
+        "#####################################################  ##############",
+        "##########################################                ###########",
+ 	"#################################################  ##################",
+        "#                                                                  ##",
+        "#                             ####                                 ##",
+        "#     ########## ####            ####                              ##",
+        "##########         ############    #####                           ##",
+	"#####################################################################",
+	"#####################################################################"
+
+    ];
+     leftPress = false;
+     rightPress = false;
 
     document.addEventListener("keyup", function (event) {
 
@@ -66,8 +98,6 @@ canvas { display:block; }
 	}
 	if(!(rightPress || leftPress)){
 		hero.moving = false;
-        hero.acceleration = 0;
-        hero.speed = 0;
 	}
     });
     document.addEventListener("keydown", function (event) {
@@ -77,7 +107,7 @@ canvas { display:block; }
                 hero.acceleration = 0;
             }
             hero.scaleX = -1;
-            hero.acceleration += 0.25;
+            hero.acceleration += 0.5;
             hero.moving = true;
 	    leftPress = true;
         }
@@ -95,38 +125,17 @@ canvas { display:block; }
                 hero.acceleration = 0;
             }
             hero.scaleX = 1;
-            hero.acceleration += 0.25;
+            hero.acceleration += 0.5;
             hero.moving = true;
 	    rightPress = true;
 
         }
         if (event.keyCode == 32) {
             gravityDirection *= -1;
-            hero.jump = false;
 
         }
 	return false;
     });
-
-    var gameOver = function(type){
-          alert("gameOver");
-        hero = {
-            angle: 30,
-            speed: 0,
-            acceleration: 0,
-            scaleX: 1,
-            scaleY: 0,
-            x: 50,
-            y: 120,
-            w: 10,
-            velocityX: 0,
-            velocityY: 0,
-            moving: false,
-            jump: false,
-            fly: false
-        }
-    }
-
 
     var ctx = document.getElementById('canvas').getContext('2d');
     var fly = true;
@@ -144,27 +153,20 @@ canvas { display:block; }
         if (hero.jump) {
 	    next =  Math.ceil((hero.velocityY + gravity * gravityDirection)/10);
 	    if(next == 0){
-
-                next = (hero.velocityY + gravity * gravityDirection > 0)? 1: -1;
+                next = gravityDirection;
             }
             falling = gravityDirection ==1?  hero.velocityY>0 :  hero.velocityY<0;
-            if (map[j+next][i] != " " && falling)  {
-                if(map[j+next][i] == "H"){
-                    gameOver();
-                }
+            if (map[j+next][i] == "#" && falling)  {
                 hero.velocityY =0;
                 hero.jump = false;
                 hero.fly = false;
 
             }
-            else if  (map[j-gravityDirection][i] != " " && !falling){
+            else if  (map[j-gravityDirection][i] == "#" && !falling){
                 hero.velocityY = 0;
                 hero.y = j*10;
                 hero.jump = false;
                 hero.fly = false;
-                if(map[j-gravityDirection][i] == "H"){
-                    gameOver();
-                }
 
             }
             else {
@@ -176,22 +178,18 @@ canvas { display:block; }
         else {
             next =  Math.ceil((hero.velocityY + gravity * gravityDirection)/10);
             if(next == 0){
-                next = (hero.velocityY + gravity * gravityDirection > 0)? 1: -1;
+                next = gravityDirection;
             }
-            if (map[j+next][i] != " ") {
+            if (map[j+next][i] == "#") {
                 //if(hero.fly || hero.)
                 hero.fly = false;
                 hero.jump = false;
 
                 hero.y  = j * 10;
                 hero.velocityY = 0;
-                if(map[j+next][i] == "H"){
-                    gameOver();
-                }
 
             }
             else {
-
                 hero.fly = true;
                 hero.y = hero.y + hero.velocityY;
                 hero.velocityY += gravity * gravityDirection;
@@ -225,7 +223,7 @@ canvas { display:block; }
 
         i = Math.round(hero.x / 10);
 
-        if(map[j][i+hero.scaleX] != " "){
+        if(map[j][i+hero.scaleX] == "#"){
                 hero.velocityX =0;
                 hero.x = i*10;
 
@@ -263,38 +261,13 @@ canvas { display:block; }
         ctx.fillStyle = "rgb(50,50,50)";        
         for (var y = minY; y < maxY; y++) {
             for (var x = minX; x < maxX; x++) {
-                if (map[y][x] != " ") {
-                    if(map[y][x] == "#"){
-                        ctx.fillStyle = "rgb(50,50,50)";
-                    }
-                    else{
-                        ctx.fillStyle = "rgb(255, 0, 0)";
-                    }
+                if (map[y][x] == "#") {
                     ctx.fillRect(x * 10*zoom + offsetX, y * 10*zoom + offsetY, 10*zoom, 10*zoom);
                 }
-
             }
         }
         ctx.fillStyle = "rgb(200,0,150)";
-       // ctx.fillRect(hero.x*zoom + offsetX, hero.y*zoom + offsetY , 10*zoom, 10*zoom);
-        for(var y = 0; y < axl.length; y++){
-            for(var x = 0; x < axl[y].length; x++){
-                if(axl[y][x]!= " "){
-                    ctx.fillStyle = colorMap[axl[y][x]];
-                    posX = x;
-                    posY = y;
-                    if(hero.scaleX < 0){
-                        posX = axl[y].length -x -1;
-                    }
-                    if(gravityDirection < 0){
-                        posY = axl.length -y - 1;
-                    }
-                    ctx.fillRect(hero.x*zoom + offsetX + posX*2, hero.y*zoom + offsetY +posY*2, 2, 2);
-                }
-
-
-            }
-        }
+        ctx.fillRect(hero.x*zoom + offsetX, hero.y*zoom + offsetY , 10*zoom, 10*zoom);
         ctx.fillStyle = "rgb(0,0,0)";
         hatOffsetX = 0;
         if (hero.scaleX < 0) {
@@ -305,7 +278,7 @@ canvas { display:block; }
             hatOffsetY  = -7;
         }
 
-      //  ctx.fillRect((hero.x - hatOffsetX)*zoom + offsetX, (hero.y - hatOffsetY)*zoom + offsetY, 15*zoom, 3*zoom);
+        ctx.fillRect((hero.x - hatOffsetX)*zoom + offsetX, (hero.y - hatOffsetY)*zoom + offsetY, 15*zoom, 3*zoom);
 
 
         requestAnimFrame(function () {
